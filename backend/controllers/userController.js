@@ -3,6 +3,13 @@ const bcrypt = require('bcryptjs');
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 
+// Generate JWT
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  });
+};
+
 // Register a new User
 // POST /api/users
 const registerUser = asyncHandler(async (req, res) => {
@@ -31,7 +38,12 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    res.status(201).json({ _id: user.id, name: user.name, email: user.email });
+    res.status(201).json({
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      token: generateToken(user._id),
+    });
   } else {
     res.status(400);
     throw new Error('Invalid User Data');
@@ -47,7 +59,12 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
   // Compare password from body to user password
   if (user && (await bcrypt.compare(password, user.password))) {
-    res.json({ _id: user.id, name: user.name, email: user.email });
+    res.json({
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      token: generateToken(user._id),
+    });
   } else {
     res.status(400);
     throw new Error('Invalid Credentials');
